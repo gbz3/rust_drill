@@ -23,29 +23,28 @@ pub fn get_args() -> MyResult<Config> {
 }
 
 pub fn run(config: Config) -> MyResult<()> {
-    for filename in config.files {
+    for filename in &config.files {
         match open(&filename) {
             Err(err) => eprintln!("Failed to open {}: {}", filename, err),
             Ok(fr) => {
-                let mut n = 0;
-                let mut b = 0;
-                for line in fr.lines().map(|l| l.unwrap()) {
+                let mut empty_num = 0;
+                for (line_num, line) in fr.lines().enumerate() {
+                    let line = line?;
                     match config {
-                        Config {number_lines: true, ..} => {
-                            n = n + 1;
-                            println!("{0: >6}\t{1}", n, line)
-                        },
+                        Config {number_lines: true, ..} => println!("{0: >6}\t{1}", line_num + 1, line),
                         Config {number_nonblank_lines: true, ..} => {
-                            if !line.is_empty() {
-                                b = b + 1;
-                                println!("{0: >6}\t{1}", b, line)
+                            match line.is_empty() {
+                                true => {
+                                    empty_num += 1;
+                                    println!();
+                                }
+                                false => println!("{0: >6}\t{1}", line_num + 1 - empty_num, line)
                             }
-                            else { println!() }
                         },
                         _ => println!("{}", line),
                     }
                 }
-            }
+            },
         }
     }
 
