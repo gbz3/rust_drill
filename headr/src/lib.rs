@@ -34,30 +34,28 @@ pub fn get_args() -> MyResult<Config> {
 }
 
 pub fn run(config: Config) -> MyResult<()> {
-    for filename in &config.files {
+    for (file_num, filename) in config.files.iter().enumerate() {
         match open(&filename) {
             Err(err) => eprintln!("head: {}: {}", filename, err),
-            Ok(file) => {
-                if config.files.len() >= 2 { println!("==> {} <==", filename) }
+            Ok(mut file) => {
+                if config.files.len() >= 2 {
+                    println!("{}==> {} <==", if file_num > 0 {"\n"} else {""}, filename)
+                }
                 match config {
                     Config { bytes: Some(limit), ..} => {
-                        for (byte_num, byte) in file.bytes().enumerate() {
-                            if byte_num >= limit { break }
-                            let byte = byte?;
-                            let my_char = byte as char;
-                            print!("{}", my_char);
-                        }
-                        if config.files.len() >= 2 { println!() }
+                        let mut handle = file.take(limit as u64);
+                        let mut buffer = vec![0; limit];
+                        let bytes_read = handle.read(&mut buffer)?;
+                        print!("{}", String::from_utf8_lossy(&buffer[..bytes_read]));
                     },
                     _ => {
-                        let mut printed_num = 0;
-                        for (line_num, line) in file.lines().enumerate() {
-                            if line_num >= config.lines { break }
-                            let line = line?;
-                            println!("{}", line);
-                            printed_num += 1;
+                        let mut line = String::new();
+                        for _ in 0..config.lines {
+                            let bytes = file.read_line(&mut line)?;
+                            if bytes == 0 { break }
+                            print!("{}", line);
+                            line.clear();
                         }
-                        if printed_num > config.lines { println!() }
                     }
                 }
             },
