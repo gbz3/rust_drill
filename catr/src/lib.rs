@@ -6,7 +6,7 @@ type MyResult<T> = Result<T, Box<dyn Error>>;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 pub struct Config {
-    #[arg(value_name = "FILE")]
+    #[arg(value_name = "FILE", help = "Input file(s) [default: -]", default_value = "-")]
     files: Vec<String>,
 
     #[arg(short = 'n', long = "number", help = "number all output lines")]
