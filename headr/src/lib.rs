@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fs::File;
 use std::io;
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, Read};
 use clap::Parser;
 
 type MyResult<T> = Result<T, Box<dyn Error>>;
@@ -34,10 +34,33 @@ pub fn get_args() -> MyResult<Config> {
 }
 
 pub fn run(config: Config) -> MyResult<()> {
-    for filename in config.files {
+    for filename in &config.files {
         match open(&filename) {
-            Err(err) => eprintln!("{}: {}", filename, err),
-            Ok(_) => println!("Opened {}", filename),
+            Err(err) => eprintln!("head: {}: {}", filename, err),
+            Ok(file) => {
+                if config.files.len() >= 2 { println!("==> {} <==", filename) }
+                match config {
+                    Config { bytes: Some(limit), ..} => {
+                        for (byte_num, byte) in file.bytes().enumerate() {
+                            if byte_num >= limit { break }
+                            let byte = byte?;
+                            let my_char = byte as char;
+                            print!("{}", my_char);
+                        }
+                        if config.files.len() >= 2 { println!() }
+                    },
+                    _ => {
+                        let mut printed_num = 0;
+                        for (line_num, line) in file.lines().enumerate() {
+                            if line_num >= config.lines { break }
+                            let line = line?;
+                            println!("{}", line);
+                            printed_num += 1;
+                        }
+                        if printed_num > config.lines { println!() }
+                    }
+                }
+            },
         }
     }
 
