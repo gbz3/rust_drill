@@ -9,10 +9,10 @@ pub struct Config {
     #[arg(value_name = "FILE", help = "Input file(s) [default: -]", default_value = "-")]
     files: Vec<String>,
 
-    #[arg(short = 'n', long = "number", help = "number all output lines")]
+    #[arg(group = "nb", short = 'n', long = "number", help = "number all output lines")]
     number_lines: bool,
 
-    #[arg(short = 'b', long = "number-nonblank", help = "number nonempty output lines, overrides -n")]
+    #[arg(group = "nb", short = 'b', long = "number-nonblank", help = "number nonempty output lines, overrides -n")]
     number_nonblank_lines: bool,
 }
 
