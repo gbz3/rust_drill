@@ -1,4 +1,6 @@
 use std::error::Error;
+use std::fs::File;
+use std::io::{self, BufRead, BufReader};
 use clap::Parser;
 
 type MyResult<T> = Result<T, Box<dyn Error>>;
@@ -21,7 +23,38 @@ pub fn get_args() -> MyResult<Config> {
 }
 
 pub fn run(config: Config) -> MyResult<()> {
-    dbg!(config);
+    for filename in config.files {
+        match open(&filename) {
+            Err(err) => eprintln!("Failed to open {}: {}", filename, err),
+            Ok(fr) => {
+                let mut n = 0;
+                let mut b = 0;
+                for line in fr.lines().map(|l| l.unwrap()) {
+                    match config {
+                        Config {number_lines: true, ..} => {
+                            n = n + 1;
+                            println!("{0: >6}\t{1}", n, line)
+                        },
+                        Config {number_nonblank_lines: true, ..} => {
+                            if !line.is_empty() {
+                                b = b + 1;
+                                println!("{0: >6}\t{1}", b, line)
+                            }
+                            else { println!() }
+                        },
+                        _ => println!("{}", line),
+                    }
+                }
+            }
+        }
+    }
 
     Ok(())
+}
+
+fn open(filename: &str) -> MyResult<Box<dyn BufRead>> {
+    match filename {
+        "-" => Ok(Box::new(BufReader::new(io::stdin()))),
+        _ => Ok(Box::new(BufReader::new(File::open(filename)?)))
+    }
 }
