@@ -10,25 +10,35 @@ pub struct Config {
         help = "Input file(s)")]
     files: Vec<String>,
 
-    #[arg(short = 'l', long = "lines", default_value = "true",
+    #[arg(short = 'l', long = "lines",
         help = "Show line count")]
     lines: bool,
 
-    #[arg(short = 'w', long = "words", default_value = "true",
+    #[arg(short = 'w', long = "words",
         help = "Show word count")]
     words: bool,
 
-    #[arg(group = "cm", short = 'c', long = "bytes", default_value = "true",
+    #[arg(group = "cm", short = 'c', long = "bytes",
         help = "Show byte count")]
     bytes: bool,
 
-    #[arg(group = "cm", short = 'm', long = "chars", default_value = "false",
+    #[arg(group = "cm", short = 'm', long = "chars",
         help = "Show character count")]
     chars: bool,
 }
 
 pub fn get_args() -> MyResult<Config> {
-    Ok(Config::parse())
+    // Ok(Config::parse())
+    let mut config = Config::parse();
+    match config {
+        Config {lines: false, words: false, bytes: false, chars: false, ..} => {
+            config.lines = true;
+            config.words = true;
+            config.bytes = true;
+        },
+        _ => ()
+    }
+    Ok(config)
 }
 
 pub fn run(config: Config) -> MyResult<()> {
