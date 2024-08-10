@@ -61,21 +61,52 @@ fn open(filename: &str) -> MyResult<Box<dyn BufRead>> {
 
 pub fn run(config: Config) -> MyResult<()> {
     //println!("{:#?}", config);
+    let mut num_files = 0;
+    let mut total_lines = 0;
+    let mut total_words = 0;
+    let mut total_bytes = 0;
+    let mut total_chars = 0;
     for filename in &config.files {
         match open(filename) {
             Err(err) => eprintln!("{}: {}", filename, err),
-            Ok(_) => println!("Opened {}", filename),
+            //Ok(_) => println!("Opened {}", filename),
+            Ok(br) => {
+                num_files += 1;
+                match count(br) {
+                    Err(err) => eprintln!("{}: {}", filename, err),
+                    Ok(fi) => {
+                        total_lines += fi.num_lines;
+                        total_words += fi.num_words;
+                        total_bytes += fi.num_bytes;
+                        total_chars += fi.num_chars;
+                        if config.lines { print!("{:>8}", fi.num_lines) }
+                        if config.words { print!("{:>8}", fi.num_words) }
+                        if config.bytes { print!("{:>8}", fi.num_bytes) }
+                        if config.chars { print!("{:>8}", fi.num_chars) }
+                        if filename == "-" { println!() }
+                        else { println!(" {}", filename) }
+                    }
+                }
+            }
         }
+    }
+    if num_files >= 2 {
+        if config.lines { print!("{:>8}", total_lines) }
+        if config.words { print!("{:>8}", total_words) }
+        if config.bytes { print!("{:>8}", total_bytes) }
+        if config.chars { print!("{:>8}", total_chars) }
+        println!(" total")
     }
 
     Ok(())
 }
 
 pub fn count(mut file: impl BufRead) -> MyResult<FileInfo> {
-    let mut num_lines = 0;
-    let mut num_words = 0;
-    let mut num_bytes = 0;
-    let mut num_chars = 0;
+    let mut buff = String::new();
+    let num_chars = file.read_to_string(&mut buff)?;
+    let num_bytes = buff.bytes().count();
+    let num_words = buff.split_ascii_whitespace().count();
+    let num_lines = buff.lines().count();
 
     Ok(FileInfo {
         num_lines,
