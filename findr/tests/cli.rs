@@ -50,7 +50,7 @@ fn dies_bad_name() -> Result<()> {
 #[test]
 fn dies_bad_type() -> Result<()> {
     //let expected = "error: invalid value 'x' for '--type [<TYPE>...]'";
-    let expected = "error: invalid value 'x' for '--type <TYPE>'";
+    let expected = "error: invalid value 'x' for '--type <TYPE>...'";
     Command::cargo_bin(PRG)?
         .args(["--type", "x"])
         .assert()
