@@ -52,26 +52,33 @@ pub fn run(config: Config) -> MyResult<()> {
     //println!("{:#?}", config);
     let match_types = |entry: &DirEntry| -> bool {
         config.entry_types.is_empty() ||
-            (config.entry_types.contains(&EntryType::Dir) && entry.file_type().is_dir()) ||
-            (config.entry_types.contains(&EntryType::File) && entry.file_type().is_file()) ||
-            (config.entry_types.contains(&EntryType::Link) && entry.file_type().is_symlink())
+            config.entry_types.iter().any(|entry_type| {
+                match entry_type {
+                    EntryType::Dir => entry.file_type().is_dir(),
+                    EntryType::File => entry.file_type().is_file(),
+                    EntryType::Link => entry.file_type().is_symlink(),
+                }
+            })
     };
 
     let match_names = |entry: &DirEntry| -> bool {
         config.names.is_empty() ||
-            config.names.iter().any(|re| re.is_match(entry.path().file_name().unwrap().to_str().unwrap()))
+            config.names.iter().any(|re| re.is_match(&entry.file_name().to_string_lossy()))
     };
 
     for path in config.paths {
-        for entry in WalkDir::new(path) {
-            match entry {
-                Err(e) => eprintln!("{}", e),
-                //Ok(entry) => println!("{}", entry.path().display()),
-                Ok(entry) => {
-                    if match_types(&entry) && match_names(&entry) { println!("{}", entry.path().display()) }
+        WalkDir::new(path).into_iter()
+            .filter_map(|e| match e {
+                Err(e) => {
+                    eprintln!("{}", e);
+                    None
                 },
-            }
-        }
+                Ok(entry) => Some(entry),
+            })
+            .filter(match_types)
+            .filter(match_names)
+            .map(|entry| entry.path().display().to_string())
+            .for_each(|e| println!("{}", e));
     }
 
     Ok(())
