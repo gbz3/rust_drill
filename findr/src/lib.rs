@@ -2,6 +2,7 @@ use std::error::Error;
 use clap::{Parser, ValueEnum};
 use clap::builder::PossibleValue;
 use regex::Regex;
+use walkdir::WalkDir;
 
 type MyResult<T> = Result<T, Box<dyn Error>>;
 
@@ -48,7 +49,15 @@ pub fn get_args() -> MyResult<Config> {
 }
 
 pub fn run(config: Config) -> MyResult<()> {
-    println!("{:#?}", config);
+    //println!("{:#?}", config);
+    for path in config.paths {
+        for entry in WalkDir::new(path) {
+            match entry {
+                Err(e) => eprintln!("{}", e),
+                Ok(entry) => println!("{}", entry.path().display()),
+            }
+        }
+    }
 
     Ok(())
 }
