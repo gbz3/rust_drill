@@ -37,19 +37,26 @@ pub fn run(config: Config) -> MyResult<()> {
     //println!("{:#?}", config);
     let mut file = open(&config.in_file)
         .map_err(|e| format!("{}: {}", config.in_file, e))?;
+
+    let print = |count: u64, text: &str| {
+        if count > 0 {
+            if config.count {
+                print!("{:>4} {}", count, text)
+            } else {
+                print!("{}", text)
+            }
+        }
+    };
+
     let mut line = String::new();
     let mut last = String::new();
     let mut count = 0;
-
     loop {
         let bytes = file.read_line(&mut line)?;
         if bytes == 0 { break }
 
         if last.trim_end() != line.trim_end() {
-            if count > 0 {
-                if config.count { print!("{:>4} {}", count, last) }
-                else { print!("{}", last) }
-            }
+            print(count, &last);
             last = line.clone();
             count = 0;
         }
@@ -57,10 +64,7 @@ pub fn run(config: Config) -> MyResult<()> {
         count += 1;
         line.clear();
     }
-    if count > 0 {
-        if config.count { print!("{:>4} {}", count, last) }
-        else { print!("{}", last) }
-    }
+    print(count, &last);
 
     Ok(())
 }
