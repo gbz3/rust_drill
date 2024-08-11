@@ -39,27 +39,28 @@ pub fn run(config: Config) -> MyResult<()> {
         .map_err(|e| format!("{}: {}", config.in_file, e))?;
     let mut line = String::new();
     let mut last = String::new();
-    let mut last_count = 0;
-
-    let bytes = file.read_line(&mut line)?;
-    if bytes == 0 { return Ok(()) }
-    last.clone_from(&line);
+    let mut count = 0;
 
     loop {
-        if last != line {
-            if config.count { print!("{:>4} {}", last_count, last) }
-            else { print!("{}", last) }
-            last.clone_from(&line);
-            last_count = 1;
-        }
-        else { last_count += 1 }
-
-        line.clear();
         let bytes = file.read_line(&mut line)?;
         if bytes == 0 { break }
+
+        if last.trim_end() != line.trim_end() {
+            if count > 0 {
+                if config.count { print!("{:>4} {}", count, last) }
+                else { print!("{}", last) }
+            }
+            last = line.clone();
+            count = 0;
+        }
+
+        count += 1;
+        line.clear();
     }
-    if config.count { print!("{:>4} {}", last_count, last) }
-    else { print!("{}", last) }
+    if count > 0 {
+        if config.count { print!("{:>4} {}", count, last) }
+        else { print!("{}", last) }
+    }
 
     Ok(())
 }
