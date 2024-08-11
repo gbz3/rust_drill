@@ -50,11 +50,16 @@ pub fn get_args() -> MyResult<Config> {
 
 pub fn run(config: Config) -> MyResult<()> {
     //println!("{:#?}", config);
-    let is_match = |entry: &DirEntry| -> bool {
+    let match_types = |entry: &DirEntry| -> bool {
         config.entry_types.is_empty() ||
             (config.entry_types.contains(&EntryType::Dir) && entry.file_type().is_dir()) ||
             (config.entry_types.contains(&EntryType::File) && entry.file_type().is_file()) ||
             (config.entry_types.contains(&EntryType::Link) && entry.file_type().is_symlink())
+    };
+
+    let match_names = |entry: &DirEntry| -> bool {
+        config.names.is_empty() ||
+            config.names.iter().any(|re| re.is_match(entry.path().file_name().unwrap().to_str().unwrap()))
     };
 
     for path in config.paths {
@@ -63,7 +68,7 @@ pub fn run(config: Config) -> MyResult<()> {
                 Err(e) => eprintln!("{}", e),
                 //Ok(entry) => println!("{}", entry.path().display()),
                 Ok(entry) => {
-                    if is_match(&entry) { println!("{}", entry.path().display()) }
+                    if match_types(&entry) && match_names(&entry) { println!("{}", entry.path().display()) }
                 },
             }
         }
